@@ -1,0 +1,51 @@
+version: '3'
+
+networks:
+    nginx-php81-node-erp:
+
+services:
+
+    # nginx
+    nginx-service-erp:
+        image: nginx:stable-alpine
+        container_name: nginx-container-erp
+        ports:
+            - "8081:80"
+        volumes:
+            - ./app:/var/www/project
+            - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - php81-service-erp
+            - mysql8-service-erp
+        networks:
+            - nginx-php81-node-erp
+
+    # php
+    php81-service-erp:
+        build:
+            context: .
+            dockerfile: ./php/Dockerfile
+        container_name: php81-container-erp
+        ports:
+            - "9000:9000"
+        volumes:
+            - ./app:/var/www/project
+            - ./php/conf/php.ini:/conf/php.ini:cached
+        networks:
+            - nginx-php81-node-erp
+
+    # mysql
+    mysql8-service-erp:
+        image: mysql:8
+        container_name: mysql8-container-erp
+        ports:
+            - "3306:3306"
+        volumes:
+            - ./mysql:/var/lib/mysql
+        command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+        restart: always # always restart unless stopped manually
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_PASSWORD: root
+        networks:
+            - nginx-php81-node-erp
